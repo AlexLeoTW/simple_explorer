@@ -1,8 +1,9 @@
 import React from 'react';
 import { Component } from 'react';
+import BlockTable from './components/BlockTable';
 
 class App extends Component {
-  state = { web3: null, latestBlock: NaN, lastUpdate: new Date(0) }
+  state = { web3: null, latestBlock: NaN, lastUpdate: null, blocks: null }
 
   constructor(props) {
     super(props);
@@ -11,24 +12,68 @@ class App extends Component {
 
   render() {
     return (
-      <React.Fragment>
+      <>
         <p>latestBlock = {this.state.latestBlock}</p>
-        <p>lastUpdate = {this.state.lastUpdate.toLocaleTimeString()}</p>
-      </React.Fragment>
+        <ul>
+          <BlockTable blocks={this.state.blocks} />
+        </ul>
+        <p>lastUpdate = {this.state.lastUpdate && this.state.lastUpdate.toLocaleTimeString()}</p>
+      </>
     );
   }
 
-  async readBlockNumber() {
-    let { web3 } = this.state;
-    let latestBlock = await web3.eth.getBlockNumber();
+  async update() {
+    let newBlock = await this.isNewBlock();
+    
+    if (newBlock) {
+      let { blocks } = this.state;
+      blocks.unshift(newBlock);
+      blocks = [...blocks].slice(0, 10);
+      this.setState({
+        latestBlock: newBlock.number,
+        blocks: blocks
+      });
+    }
+  }
+
+  async isNewBlock() {
+    let { web3, latestBlock } = this.state;
+
+    if (!latestBlock) { return false; }
+
+    let nowLatestBlock = await web3.eth.getBlockNumber();
     this.setState({
-      latestBlock: latestBlock,
       lastUpdate: new Date()
     })
+
+    if (!(nowLatestBlock === latestBlock)) {
+      let block = await web3.eth.getBlock(nowLatestBlock);
+      return block
+    } else {
+      return false;
+    }
+  }
+
+  async initState() {
+    let { web3 } = this.state;
+    let latestBlock = await web3.eth.getBlockNumber();
+    let blocks = []
+
+    for (let i=0; i<10; i++){
+      let block = await web3.eth.getBlock(latestBlock - i);
+      blocks.push(block)
+    }
+
+    this.setState({
+      latestBlock: latestBlock,
+      blocks: blocks,
+      lastUpdate: new Date()
+    });
   }
 
   componentDidMount() {
-    this.timerID = setInterval(() => this.readBlockNumber(), 2000);
+    this.initState()
+    this.timerID = setInterval(() => this.update(), 5000);
   }
 
   componentWillUnmount() {
