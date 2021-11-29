@@ -1,14 +1,13 @@
 import Web3 from 'web3';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+
+import { provider } from './config.json'
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-
-var provider = 'https://mainnet.infura.io/v3/ff04190c82ae4cb79467d6dbe26b3474'
-var web3Provider = new Web3.providers.HttpProvider(provider);
-var web3 = new Web3(web3Provider);
+const web3Provider = new Web3.providers.HttpProvider(provider);
+const web3 = new Web3(web3Provider);
 
 ReactDOM.render(
   <React.StrictMode>
